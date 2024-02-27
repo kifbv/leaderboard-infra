@@ -27,3 +27,22 @@ jobs:
         run: |
           aws dynamodb list-tables
           
+  deploy_to_production:
+    name: "Deploy to production environment"
+    if: ${{ github.ref == 'refs/heads/main' }}
+    environment:
+      name: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: clone the repo
+        uses: actions/checkout@v4
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-region: eu-central-1
+          role-to-assume: ${{ secrets.PROD_DEPLOY_ROLE }}
+          role-session-name: GithubOIDC
+      - name: Test
+        run: |
+          aws dynamodb list-tables
+ 

@@ -13,7 +13,7 @@ provider "aws" {
 module "dynamodb_table" {
   source = "terraform-aws-modules/dynamodb-table/aws"
 
-  name     = "my-table"
+  name     = "test-table"
   hash_key = "id"
 
   attributes = [

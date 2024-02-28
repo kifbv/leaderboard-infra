@@ -8,7 +8,6 @@ terraform {
 }
 
 provider "aws" {
-  region = "eu-central-1"
 }
 
 module "dynamodb_table" {

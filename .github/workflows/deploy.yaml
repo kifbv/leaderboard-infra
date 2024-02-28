@@ -1,7 +1,9 @@
-name: "Deploy infra"
+name: "☁️ Deploy infrastructure"
 
 on:
-  push
+  push:
+    paths:
+      - '**.tf'
 
 permissions:
   id-token: write # This is required for requesting the JWT
@@ -23,11 +25,28 @@ jobs:
           aws-region: eu-central-1
           role-to-assume: ${{ secrets.DEV_DEPLOY_ROLE }}
           role-session-name: GithubOIDC
-      - name: Test
-        run: |
-          aws dynamodb list-tables
+      - name: setup terraform
+        uses: hashicorp/setup-terraform@v3
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color
+        continue-on-error: true
           
   deploy_to_production:
+    needs: deploy_to_development
     name: "Deploy to production environment"
     if: ${{ github.ref == 'refs/heads/main' }}
     environment:

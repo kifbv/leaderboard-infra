@@ -24,7 +24,7 @@ jobs:
 
   deploy_to_development:
     needs: hello
-    name: "🚀 Deploy to development environment"
+    name: "✈️ Deploy to development environment"
     if: ${{ github.ref != 'refs/heads/main' }}
     environment:
       name: development

@@ -1,3 +1,4 @@
+# tf config
 terraform {
   required_providers {
     aws = {
@@ -10,6 +11,7 @@ terraform {
 provider "aws" {
 }
 
+# resources
 module "dynamodb_table" {
   source = "terraform-aws-modules/dynamodb-table/aws"
 

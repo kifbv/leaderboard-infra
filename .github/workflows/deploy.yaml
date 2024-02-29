@@ -51,6 +51,7 @@ jobs:
         run: terraform plan -no-color
         continue-on-error: false
       - uses: actions/github-script@v6
+        id: set-result
         env:
            PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
         with:

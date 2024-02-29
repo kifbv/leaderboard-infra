@@ -48,12 +48,11 @@ jobs:
         run: terraform validate -no-color
       - name: Terraform Plan
         id: plan
-        run: terraform plan -no-color
+        run: terraform plan -no-color -out=TFPlan
         continue-on-error: false
       - name: Terraform Apply
         id: apply
-        run: |
-          echo "Test Run"
+        run: terraform apply -auto-approve TFPlan
           
   deploy_to_production:
     needs: hello

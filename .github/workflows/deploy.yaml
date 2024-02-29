@@ -2,10 +2,16 @@ name: "☁️ Deploy infrastructure"
 
 on:
   push:
+    branches:
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
 
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read  # This is required for actions/checkout
+  pull_requests: write
 
 jobs:
   hello:
@@ -18,7 +24,7 @@ jobs:
 
   deploy_to_development:
     needs: hello
-    name: "Deploy to development environment"
+    name: "✈️ Deploy to development environment"
     if: ${{ github.ref != 'refs/heads/main' }}
     environment:
       name: development
@@ -108,7 +114,7 @@ jobs:
           
   deploy_to_production:
     needs: hello
-    name: "Deploy to production environment"
+    name: "🚀 Deploy to production environment"
     if: ${{ github.ref == 'refs/heads/main' }}
     environment:
       name: production

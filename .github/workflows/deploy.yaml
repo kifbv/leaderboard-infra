@@ -125,6 +125,9 @@ jobs:
           role-session-name: GithubOIDC
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+      - name: Terraform Init
+        id: init
+        run: terraform init
       - name: Terraform Apply
         id: apply
         run: terraform apply -auto-approve

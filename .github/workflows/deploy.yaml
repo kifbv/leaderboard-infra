@@ -6,6 +6,10 @@ on:
     branches:
       - main
 
+env:
+  TF_IN_AUTOMATION: Yes
+
+
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read  # This is required for actions/checkout
@@ -27,7 +31,6 @@ jobs:
     if: ${{ github.ref != 'refs/heads/main' }}
     environment:
       name: development
-      TF_IN_AUTOMATION: 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Clone the repo
@@ -64,7 +67,6 @@ deploy_to_production:
     if: github.event_name == 'pull_request'
     environment:
       name: production
-      TF_IN_AUTOMATION: 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Clone the repo

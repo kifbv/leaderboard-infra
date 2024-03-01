@@ -61,7 +61,7 @@ jobs:
         continue-on-error: false
       - name: Export TF Plan
         id: export
-        run: echo "tfplan_result=$(grep 'no changes required' <<< ${{ steps.plan.outputs.stdout }})"
+        run: echo tfplan_result=$(grep 'no changes required' <<< "${{ steps.plan.outputs.stdout }}")
           
   deploy_to_production:
     needs: hello

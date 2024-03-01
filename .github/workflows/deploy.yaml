@@ -25,10 +25,12 @@ jobs:
         run: |
           echo "Starting CI/CD of ${{ github.repository }}"
 
-  deploy_to_development:
+  tfplan_to_development:
     needs: hello
     name: "✈️ Deploy to development environment"
     if: ${{ github.ref != 'refs/heads/main' }}
+    outputs:
+      tfplan_result: ${{ steps.export.outputs.tfplan_result }}
     environment:
       name: development
     runs-on: ubuntu-latest
@@ -57,6 +59,16 @@ jobs:
         id: plan
         run: terraform plan -no-color
         continue-on-error: false
+      - name: Export TF Plan
+        id: export
+        run: echo "tfplan_result="${{ steps.plan.outputs.stdout }}" >> "$GITHUB_OUTPUT"
+  
+  tfapply_to_development:
+    needs: tfplan_to_development
+    env:
+      TFPLAN_RESULT: ${{ needs.tfplan_to_development.outputs.tfplan_result }} 
+    if: ${{ contains( TFPLAN_RESULT, 'no changes are needed') }}
+    steps:
       - name: Terraform Apply
         id: apply
         run: terraform apply -auto-approve

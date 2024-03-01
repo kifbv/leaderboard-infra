@@ -65,9 +65,8 @@ jobs:
   
   tfapply_to_development:
     needs: tfplan_to_development
-    env:
-      TFPLAN_RESULT: ${{ needs.tfplan_to_development.outputs.tfplan_result }} 
-    if: ${{ contains( TFPLAN_RESULT, 'no changes are needed') }}
+    runs-on: ubuntu-latest
+    if: ${{ contains( ${{ needs.tfplan_to_development.outputs.tfplan_result }}, 'no changes are needed') }}
     steps:
       - name: Terraform Apply
         id: apply

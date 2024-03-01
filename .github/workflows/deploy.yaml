@@ -61,16 +61,7 @@ jobs:
         continue-on-error: false
       - name: Export TF Plan
         id: export
-        run: echo "tfplan_result="${{ steps.plan.outputs.stdout }}" >> "$GITHUB_OUTPUT"
-  
-  tfapply_to_development:
-    needs: tfplan_to_development
-    runs-on: ubuntu-latest
-    if: ${{ contains( $GITHUB_OUTPUT, 'no changes are needed') }}
-    steps:
-      - name: Terraform Apply
-        id: apply
-        run: terraform apply -auto-approve
+        run: echo "tfplan_result=$(grep 'no changes required' ${{ steps.plan.outputs.stdout }})"
           
   deploy_to_production:
     needs: hello

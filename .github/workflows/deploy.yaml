@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   hello:
-    name: "⚓ Starting"
+    name: "⚓ CI/CD starting"
     runs-on: ubuntu-latest
     steps:
       - name: Starting
@@ -75,6 +75,13 @@ jobs:
       name: development
     runs-on: ubuntu-latest
     steps:
+      - name: Wait for approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: kifbv
+          minimum-approvals: 1
+          timeout-minutes: 5
       - name: Clone the repo
         uses: actions/checkout@v4
       - name: Configure aws credentials

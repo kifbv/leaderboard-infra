@@ -90,7 +90,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-region: eu-central-1
-          role-to-assume: ${{ secrets.PROD_DEPLOY_ROLE }}
+          role-to-assume: ${{ secrets.DEV_DEPLOY_ROLE }}
           role-session-name: GithubOIDC
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3

@@ -29,8 +29,6 @@ jobs:
     needs: hello
     name: "✈️ TF Plan to development environment"
     if: ${{ github.ref != 'refs/heads/main' }}
-    outputs:
-      tfplan_result: ${{ steps.export.outputs.tfplan_result }}
     environment:
       name: development
     outputs:

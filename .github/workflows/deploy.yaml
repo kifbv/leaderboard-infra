@@ -27,7 +27,7 @@ jobs:
 
   tfplan_to_development:
     needs: hello
-    name: "✈️ Deploy to development environment"
+    name: "✈️ TF Plan to development environment"
     if: ${{ github.ref != 'refs/heads/main' }}
     outputs:
       tfplan_result: ${{ steps.export.outputs.tfplan_result }}
@@ -59,15 +59,36 @@ jobs:
         id: plan
         run: terraform plan -no-color
         continue-on-error: false
-      - name: Terraform Apply
-        run: |
+      - run: |
           if [[ $(grep --count 'no changes are needed' <<< "${{ steps.plan.outputs.stdout }}") -eq '1' ]]; then
-            echo "No changes, skipping TF Plan"
+            echo "No changes, skipping TF Apply"
           else
-            terraform apply -auto-approve
+            echo "New plan available, proceeding"
+            echo "::set-outputname=result::new-plan"
           fi
-            
-          
+
+  tfapply_to_development:
+    needs: tfplan_to_development
+    name: "✈️ TF Apply to development environment"
+    if: ${{ needs.tfplan_to_development.result == 'new-plan'}}
+    environment:
+      name: development
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repo
+        uses: actions/checkout@v4
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-region: eu-central-1
+          role-to-assume: ${{ secrets.PROD_DEPLOY_ROLE }}
+          role-session-name: GithubOIDC
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve
+
   deploy_to_production:
     needs: hello
     name: "🚀 Deploy to production environment"

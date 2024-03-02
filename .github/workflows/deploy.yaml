@@ -26,9 +26,9 @@ jobs:
 
   tfplan_to_development:
     needs: hello
-    name: "✈️ Terraform Plan for ${{ env.TARGET }}"
+    name: "✈️ Terraform Plan"
     environment:
-      name: ${{ env.TARGET }}
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
     #outputs:
     #  tfplan_result: ${{ steps.checkplan.outputs.result}}
     runs-on: ubuntu-latest

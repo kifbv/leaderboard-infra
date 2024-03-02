@@ -1,4 +1,5 @@
 name: "☁️ Deploy infrastructure"
+run-name: "Deploy to ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }} (${{ github.event_name }})"
 
 on:
   push:
@@ -7,7 +8,6 @@ on:
 
 env:
   TF_IN_AUTOMATION: Yes
-  TARGET: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
 
 permissions:
   id-token: write # This is required for requesting the JWT
@@ -58,9 +58,9 @@ jobs:
         run: terraform plan -no-color
       - name: Summary
         run: |
-          echo '#### Terraform Format and Style 🖌 ${{ steps.fmt.outcome }}
+          echo '#### Terraform Format and Style ⚙️ ${{ steps.fmt.outcome }}
           #### Terraform Initialization ⚙️ ${{ steps.init.outcome }}
-          #### Terraform Validation 🤖 ${{ steps.validate.outcome }}
+          #### Terraform Validation ⚙️ ${{ steps.validate.outcome }}
           <details><summary>Validation Output</summary>
 
             ```
@@ -69,7 +69,7 @@ jobs:
 
             </details>
 
-            #### Terraform Plan 📖 ${{ steps.plan.outcome }}
+            #### Terraform Plan ⚙️ ${{ steps.plan.outcome }}
 
             <details><summary>Show Plan</summary>
 

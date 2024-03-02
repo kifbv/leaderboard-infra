@@ -1,5 +1,5 @@
 name: "☁️ Deploy infrastructure"
-run-name: "Deploy to ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }} (${{ github.event_name }})"
+run-name: "Deploy to ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}"
 
 on:
   push:

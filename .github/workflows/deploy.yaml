@@ -24,3 +24,211 @@ jobs:
         run: |
           echo "Starting CI/CD of ${{ github.repository }}"
 
+  tfplan_to_development:
+    needs: hello
+    name: "✈️ TF Plan to development environment"
+    if: ${{ github.ref != 'refs/heads/main' }}
+    environment:
+      name: development
+    outputs:
+      tfplan_result: ${{ steps.checkplan.outputs.result}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repo
+        uses: actions/checkout@v4
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-region: eu-central-1
+          role-to-assume: ${{ secrets.DEV_DEPLOY_ROLE }}
+          role-session-name: GithubOIDC
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+      - name: Terraform Init
+        id: init
+        run: terraform init
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color
+        continue-on-error: false
+      - uses: actions/github-script@v6
+        id: plan-script
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+
+            \`\`\`\n
+            ${{ steps.validate.outputs.stdout }}
+            \`\`\`
+
+            </details>
+
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
+
+            return output
+      - run: echo "${{ steps.plan-script.outputs.result }}" >> $GITHUB_STEP_SUMMARY
+      - name: Wait for approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: kifbv
+          minimum-approvals: 1
+          timeout-minutes: 5
+          issue-body: "$GITHUB_STEP_SUMMARY"
+      # - name: Check plan
+      #   id: checkplan
+      #   run: |
+      #     if [[ $(grep --count 'no changes are needed' <<< "${{ steps.plan.outputs.stdout }}") -eq '1' ]]; then
+      #       echo "No changes, skipping TF Apply"
+      #     else
+      #       echo "New plan available, proceeding"
+      #       echo "result=new-plan" >> $GITHUB_OUTPUT
+      #     fi
+
+  tfapply_to_development:
+    needs: tfplan_to_development
+    name: "✈️ TF Apply to development environment"
+    if: ${{ needs.tfplan_to_development.outputs.tfplan_result == 'new-plan'}}
+    environment:
+      name: development
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: kifbv
+          minimum-approvals: 1
+          timeout-minutes: 5
+          issue-body: "$GITHUB_STEP_SUMMARY"
+      - name: Clone the repo
+        uses: actions/checkout@v4
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-region: eu-central-1
+          role-to-assume: ${{ secrets.DEV_DEPLOY_ROLE }}
+          role-session-name: GithubOIDC
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+      - name: Terraform Init
+        id: init
+        run: terraform init
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve
+
+  deploy_to_production:
+    needs: hello
+    name: "🚀 Deploy to production environment"
+    if: github.event_name == 'pull_request'
+    environment:
+      name: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repo
+        uses: actions/checkout@v4
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-region: eu-central-1
+          role-to-assume: ${{ secrets.PROD_DEPLOY_ROLE }}
+          role-session-name: GithubOIDC
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+      - name: Terraform Init
+        id: init
+        run: terraform init
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color
+        continue-on-error: false
+      - uses: actions/github-script@v6
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // 1. Retrieve existing bot comments for the PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('Terraform Format and Style')
+            })
+
+            // 2. Prepare format of the comment
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+
+            \`\`\`\n
+            ${{ steps.validate.outputs.stdout }}
+            \`\`\`
+
+            </details>
+
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ env.tf_actions_working_dir }}\`, Workflow: \`${{ github.workflow }}\`*`;
+
+            // 3. If we have a comment, update it, otherwise create a new one
+            if (botComment) {
+              github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output
+              })
+            } else {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              })
+            }
+      - name: Terraform Apply
+        id: apply
+        run: |
+          echo "Test Run"

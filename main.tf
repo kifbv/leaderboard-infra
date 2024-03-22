@@ -18,42 +18,41 @@ module "dynamodb_table" {
   name         = "leaderboard"
   billing_mode = "PAY_PER_REQUEST"
 
+  ttl_attribute_name = "TTL"
+  ttl_enabled        = false
+
   hash_key  = "PK"
   range_key = "SK"
 
-  attribute {
-    name = "PK"
-    type = "S"
-  }
+  attributes = [
+    {
+      name = "PK"
+      type = "S"
+    },
+    {
+      name = "SK"
+      type = "S"
+    },
+    {
+      name = "Data"
+      type = "S"
+    }
+  ]
 
-  attribute {
-    name = "SK"
-    type = "S"
-  }
-
-  attribute {
-    name = "Data"
-    type = "S"
-  }
-
-  ttl {
-    enabled        = false
-    attribute_name = "TTL"
-  }
-
-  global_secondary_index {
-    name               = "GSI1"
-    hash_key           = "SK"
-    range_key          = "PK"
-    projection_type    = "ALL"
-  }
-
-  global_secondary_index {
-    name               = "GSI2"
-    hash_key           = "SK"
-    range_key          = "Data"
-    projection_type    = "ALL"
-  }
+  global_secondary_indexes = [
+    {
+      name               = "GSI1"
+      hash_key           = "SK"
+      range_key          = "PK"
+      projection_type    = "ALL"
+    },
+    {
+      name               = "GSI2"
+      hash_key           = "SK"
+      range_key          = "Data"
+      projection_type    = "ALL"
+    }
+  ]
 
   tags = {
     Terraform   = "true"
